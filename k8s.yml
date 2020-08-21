@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-server
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 30001
+  selector:
+    app: web-server
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: web-server-pv-claim
+  labels:
+    app: web-server
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+spec:
+  selector:
+    matchLabels:
+      app: web-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: web-server
+    spec:
+      containers:
+      - image: sofdem/back:tagVersion
+        name: web-server
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: web-server-storage
+          mountPath: /usr/src/app
+      volumes:
+      - name: web-server-storage
+        persistentVolumeClaim:
+          claimName: web-server-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-client
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 30000
+  selector:
+    app: web-client
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: web-client-pv-claim
+  labels:
+    app: web-client
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-client
+spec:
+  selector:
+    matchLabels:
+      app: web-client
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: web-client
+    spec:
+      containers:
+      - image: sofdem/front:tagVersion
+        name: web-client
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: web-client-storage
+          mountPath: /usr/src/app
+      volumes:
+      - name: web-client-storage
+        persistentVolumeClaim:
+          claimName: web-client-pv-claim
+
